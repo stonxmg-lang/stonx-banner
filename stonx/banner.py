@@ -14,7 +14,7 @@ import fcntl, os, re, signal, struct, sys, termios, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.dont_write_bytecode = True
-from font import GLYPHS, HEIGHT  # noqa: E402
+from font import GLYPHS, HEIGHT, MID_GLYPHS, MID_HEIGHT  # noqa: E402
 
 CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "stonx", "config")
 LAYOUT_FILE = os.path.join(os.path.dirname(CONFIG), ".layout")
@@ -62,27 +62,34 @@ def clean_name(name):
     return " ".join(name.split()) or "STONX"
 
 
-def big_rows(text):
-    return ["".join(GLYPHS[c][i] for c in text).rstrip() for i in range(HEIGHT)]
+def rows_of(text, glyphs, height):
+    return ["".join(glyphs[c][i] for c in text).rstrip() for i in range(height)]
 
 
-def wordmark(name, cols):
-    """Big letters on as few lines as fit; spaced small caps if nothing fits."""
-    room = cols - 2
+def wrap(name, room, glyphs, height):
+    """Words packed onto as few lines as fit, or None if a word is too wide."""
+    width = lambda t: max(map(len, rows_of(t, glyphs, height)))
     lines, cur = [], ""
     for word in name.split(" "):
         trial = (cur + " " + word).strip()
-        if max(map(len, big_rows(trial))) <= room:
+        if width(trial) <= room:
             cur = trial
-        elif cur and max(map(len, big_rows(word))) <= room:
+        elif cur and width(word) <= room:
             lines.append(cur)
             cur = word
         else:
-            lines = None
-            break
-    if lines is not None:
-        lines.append(cur)
-        return "big", [big_rows(line) for line in lines]
+            return None
+    lines.append(cur)
+    return [rows_of(line, glyphs, height) for line in lines]
+
+
+def wordmark(name, cols, max_rows):
+    """Big letters if they fit, then mid-size blocks, then spaced small caps."""
+    room = cols - 2
+    for kind, glyphs, height in (("big", GLYPHS, HEIGHT), ("mid", MID_GLYPHS, MID_HEIGHT)):
+        blocks = wrap(name, room, glyphs, height)
+        if blocks and sum(len(b) + 1 for b in blocks) - 1 <= max_rows:
+            return kind, blocks
     small = " ".join(name)
     return "small", [[small[:room]]]
 
@@ -99,7 +106,8 @@ class Layout:
     """Blank line, the name, the tagline, blank line, centred on the terminal."""
 
     def __init__(self, rows, cols, cfg):
-        self.kind, self.blocks = wordmark(clean_name(cfg["NAME"]), cols)
+        # Leave at least 4 free rows plus the blank lines and tagline.
+        self.kind, self.blocks = wordmark(clean_name(cfg["NAME"]), cols, rows - 7)
         self.cols = cols
         tag = cfg["TAGLINE"].strip()
         self.tagline = tag if tag and len(tag) <= cols - 2 else ""
@@ -127,7 +135,10 @@ def draw(lay, theme, cells, intro_t, shimmer_t):
                 if lay.kind == "small":
                     c = mix(hi, lo, x)
                 else:
-                    c = mix(hi, lo, y / max(n - 1, 1)) if ch == "█" else shadow
+                    face = ch in "█▀▄"
+                    c = mix(hi, lo, y / max(n - 1, 1)) if face else shadow
+                    if ch == "░":  # the mid font's light-shade background
+                        c = mix((0, 0, 0), shadow, 0.55)
                 glow = 0.0
                 if intro_t is not None:  # bright edge on the reveal
                     d = intro_t * 1.15 - x
