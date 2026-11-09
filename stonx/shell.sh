@@ -121,7 +121,17 @@ stonx() {
         name)
             shift
             [[ $* ]] || { echo "usage: stonx name YOUR NAME"; return 1; }
-            __stonx_set NAME "$*"; __stonx_prompt_set; __stonx_pending=1 ;;
+            local name=$* bad
+            # The block font has A-Z, 0-9, space and - . ! ? _ & @ #
+            bad=${name//[A-Za-z0-9 .!?_&@#-]/}
+            if [[ ${name//[^A-Za-z0-9]/} == "" ]]; then
+                echo "stonx: use English letters or numbers, e.g. stonx name AHMED"
+                return 1
+            fi
+            if [[ $bad ]]; then
+                echo "stonx: these characters can't be drawn and will be skipped: $bad"
+            fi
+            __stonx_set NAME "$name"; __stonx_prompt_set; __stonx_pending=1 ;;
         tagline|tag)
             shift
             [[ $1 == off ]] && set -- ""
@@ -145,6 +155,8 @@ stonx() {
             python3 -I -S "$STONX_HOME/stonx/banner.py" print ;;
         update)
             git -C "$STONX_HOME" pull --ff-only && __stonx_pending=1 ;;
+        version|-v|--version)
+            echo "stonx-banner $(cat "$STONX_HOME/VERSION" 2>/dev/null || echo unknown)" ;;
         uninstall)
             bash "$STONX_HOME/uninstall.sh" ;;
         help|-h|--help)
@@ -157,6 +169,7 @@ stonx prompt on|off      use the STONX prompt or keep your own
 stonx off | on           turn the banner off / on
 stonx preview            print the banner once
 stonx update             get the latest version
+stonx version            show the installed version
 stonx uninstall          remove everything
 EOF
             ;;

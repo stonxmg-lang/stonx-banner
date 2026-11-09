@@ -4,15 +4,7 @@ Your name in big block letters at the top of Termux, with a grey tagline under i
 
 اسمك بحروف بلوكات كبيرة فوق شاشة Termux، وتحته سطر رمادي.
 
-```
- ███████╗████████╗ ██████╗ ███╗   ██╗██╗  ██╗
- ██╔════╝╚══██╔══╝██╔═══██╗████╗  ██║╚██╗██╔╝
- ███████╗   ██║   ██║   ██║██╔██╗ ██║ ╚███╔╝
- ╚════██║   ██║   ██║   ██║██║╚██╗██║ ██╔██╗
- ███████║   ██║   ╚██████╔╝██║ ╚████║██╔╝ ██╗
- ╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝
-        CODE  ·  BUILD  ·  BREAK  ·  REPEAT
-```
+<p align="center"><img src="docs/preview.gif" alt="STONX banner in Termux" width="640"></p>
 
 ## Install / التثبيت
 
@@ -42,6 +34,7 @@ curl -fsSL https://raw.githubusercontent.com/stonxmg-lang/stonx-banner/main/inst
 | `stonx off` / `stonx on` | turn the banner off / on |
 | `stonx preview` | print the banner once |
 | `stonx update` | get the latest version / تحديث |
+| `stonx version` | show the installed version / رقم النسخة |
 | `stonx uninstall` | remove everything / حذف |
 
 `clear` and `Ctrl+L` wipe the screen and bring the banner straight back.
@@ -54,7 +47,11 @@ curl -fsSL https://raw.githubusercontent.com/stonxmg-lang/stonx-banner/main/inst
 - It animates for the first few minutes, then stops to save battery.
 - It stops the moment you run a command, so it never draws over your output.
 
-Names can use `A-Z`, `0-9`, spaces and `- . ! ? _ & @ #`.
+Names can use `A-Z`, `0-9`, spaces and `- . ! ? _ & @ #`. Anything else (Arabic
+letters, emoji) can't be drawn by the block font: `stonx name` tells you which
+characters it will skip.
+
+الاسم لازم يكون بحروف إنجليزية أو أرقام. لو كتبت حروف عربي أو إيموجي، الأمر هيقولك إنها مش هتظهر.
 
 ## Files
 
@@ -63,6 +60,10 @@ Names can use `A-Z`, `0-9`, spaces and `- . ! ? _ & @ #`.
 ~/.config/stonx/config    your settings: NAME, TAGLINE, THEME, PROMPT, ENABLED
 ~/.bashrc                 one line ending in "# stonx-banner"
 ```
+
+## Preview image
+
+`docs/preview.gif` is drawn by the real banner code: `python3 tools/make_preview.py` (needs Pillow).
 
 ## Credits
 
