@@ -33,7 +33,7 @@ curl -fsSL https://raw.githubusercontent.com/stonxmg-lang/stonx-banner/main/inst
 | `stonx prompt on\|off` | use the STONX prompt or keep your own / البرومبت |
 | `stonx off` / `stonx on` | turn the banner off / on |
 | `stonx preview` | print the banner once |
-| `stonx update` | get the latest version / تحديث |
+| `stonx update` | get the latest version, keeps your settings / تحديث لآخر نسخة من غير ما إعداداتك تتغير |
 | `stonx version` | show the installed version / رقم النسخة |
 | `stonx uninstall` | remove everything / حذف |
 
