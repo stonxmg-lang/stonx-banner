@@ -90,11 +90,18 @@ if (( SHLVL <= 1 )) || [[ -e $STONX_HOME/.show-once ]]; then
     rm -f "$STONX_HOME/.show-once"
 fi
 __stonx_prompt() {
+    if [[ $__stonx_reload ]]; then
+        __stonx_reload=
+        . "$STONX_HOME/stonx/shell.sh"
+        __stonx_pending=1
+    fi
     [[ $__stonx_pending ]] || return 0
     __stonx_pending=
     __stonx_start
 }
-PROMPT_COMMAND="${PROMPT_COMMAND:+${PROMPT_COMMAND%;};}__stonx_prompt"
+# Added once, so re-loading this file after an update does not stack it.
+[[ ";$PROMPT_COMMAND;" == *";__stonx_prompt;"* ]] ||
+    PROMPT_COMMAND="${PROMPT_COMMAND:+${PROMPT_COMMAND%;};}__stonx_prompt"
 
 # "clear" wipes the screen, then the banner comes straight back on top.
 clear() { command clear "$@"; __stonx_pending=1; }
@@ -110,6 +117,32 @@ __stonx_redraw() {
     printf '%s\n' "$__stonx_line"
 }
 bind -x '"\C-l": __stonx_redraw' 2>/dev/null
+
+# ---------- update ----------
+
+# Brings the program to the latest GitHub version. Only the program folder is
+# replaced; your settings live in ~/.config/stonx and are never touched.
+__stonx_update() {
+    local old new
+    command -v git >/dev/null || { echo "stonx: git is missing. Run: pkg install git"; return 1; }
+    [[ -d $STONX_HOME/.git ]] || { echo "stonx: $STONX_HOME is not a git install. Reinstall with the install command."; return 1; }
+    old=$(cat "$STONX_HOME/VERSION" 2>/dev/null || echo "?")
+    echo "Checking for updates..."
+    if ! git -C "$STONX_HOME" fetch --quiet --depth 1 origin main 2>/dev/null; then
+        echo "stonx: couldn't reach GitHub. Check your internet and try again."
+        return 1
+    fi
+    if [[ $(git -C "$STONX_HOME" rev-parse HEAD) == $(git -C "$STONX_HOME" rev-parse FETCH_HEAD) ]]; then
+        echo "Already up to date ($old)."
+        return 0
+    fi
+    # Program files only: any local edits to them are replaced by the new version.
+    git -C "$STONX_HOME" reset --quiet --hard FETCH_HEAD || { echo "stonx: update failed."; return 1; }
+    new=$(cat "$STONX_HOME/VERSION" 2>/dev/null || echo "?")
+    echo "Updated $old -> $new. Your settings were kept."
+    __stonx_reload=1    # load the new commands at the next prompt
+    __stonx_pending=1
+}
 
 # ---------- the stonx command ----------
 
@@ -154,7 +187,7 @@ stonx() {
         preview|print)
             python3 -I -S "$STONX_HOME/stonx/banner.py" print ;;
         update)
-            git -C "$STONX_HOME" pull --ff-only && __stonx_pending=1 ;;
+            __stonx_update ;;
         version|-v|--version)
             echo "stonx-banner $(cat "$STONX_HOME/VERSION" 2>/dev/null || echo unknown)" ;;
         uninstall)
@@ -168,7 +201,7 @@ stonx theme blue         colours: $themes
 stonx prompt on|off      use the STONX prompt or keep your own
 stonx off | on           turn the banner off / on
 stonx preview            print the banner once
-stonx update             get the latest version
+stonx update             get the latest version (keeps your settings)
 stonx version            show the installed version
 stonx uninstall          remove everything
 EOF
