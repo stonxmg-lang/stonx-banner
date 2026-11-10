@@ -40,6 +40,16 @@ fi
 
 mkdir -p "${CONFIG%/*}"
 if [[ ${1:-} ]]; then
+    # The block font has A-Z, 0-9, space and - . ! ? _ & @ #
+    name=$*
+    if [[ -z ${name//[^A-Za-z0-9]/} ]]; then
+        say "The name needs English letters or numbers. Using STONX; change it later with: stonx name AHMED"
+        set -- STONX
+    elif [[ ${name//[A-Za-z0-9 .!?_&@#-]/} ]]; then
+        say "These characters can't be drawn and will be skipped: ${name//[A-Za-z0-9 .!?_&@#-]/}"
+    fi
+fi
+if [[ ${1:-} ]]; then
     tmp=$CONFIG.tmp; : > "$tmp"
     [[ -r $CONFIG ]] && grep -v '^NAME=' "$CONFIG" >> "$tmp" || true
     printf 'NAME=%s\n' "$*" >> "$tmp"
