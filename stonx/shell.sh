@@ -93,7 +93,7 @@ __stonx_prompt() {
     if [[ $__stonx_reload ]]; then
         __stonx_reload=
         . "$STONX_HOME/stonx/shell.sh"
-        __stonx_pending=1
+        __stonx_pending=
     fi
     [[ $__stonx_pending ]] || return 0
     __stonx_pending=
@@ -140,8 +140,7 @@ __stonx_update() {
     git -C "$STONX_HOME" reset --quiet --hard FETCH_HEAD || { echo "stonx: update failed."; return 1; }
     new=$(cat "$STONX_HOME/VERSION" 2>/dev/null || echo "?")
     echo "Updated $old -> $new. Your settings were kept."
-    __stonx_reload=1    # load the new commands at the next prompt
-    __stonx_pending=1
+    __stonx_reload=1    # load the new commands at the next prompt; the message stays on screen
 }
 
 # ---------- the stonx command ----------
