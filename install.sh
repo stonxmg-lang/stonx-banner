@@ -30,10 +30,10 @@ if (( ${#need[@]} )); then
 fi
 
 if [[ -d $DIR/.git ]]; then
-    say "Updating $DIR"
+    say "Updating ${DIR/#$HOME/\~}"
     git -C "$DIR" pull --ff-only --quiet
 else
-    say "Downloading to $DIR"
+    say "Downloading to ${DIR/#$HOME/\~}"
     rm -rf "$DIR"
     git clone --quiet --depth 1 "$REPO" "$DIR"
 fi
